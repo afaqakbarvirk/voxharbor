@@ -56,6 +56,8 @@ function ringer() {
 }
 
 /* ---------- softphone line ---------- */
+const lines = [];
+
 class Line {
   constructor(id, defaultUser) {
     this.id = id;
@@ -293,6 +295,7 @@ class Line {
   }
 }
 
-const lines = [new Line('A', '1001'), new Line('B', '1002')];
+lines.push(new Line('A', '1001'), new Line('B', '1002'));
+lines.forEach((l) => l.r.chips.querySelectorAll('button').forEach((b) => b.dispatchEvent(new Event('mouseenter'))));
 window.addEventListener('beforeunload', () => lines.forEach((l) => l.ua && l.ua.stop()));
 log('UI', 'Ready. Enter the password on each line and click Register.');
