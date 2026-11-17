@@ -1,0 +1,5 @@
+.env
+*.pcap
+sipp/logs/
+*.log
+.claude/settings.local.json

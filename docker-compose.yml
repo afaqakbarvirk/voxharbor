@@ -1,0 +1,51 @@
+name: voxharbor
+
+networks:
+  voxnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+x-freeswitch: &freeswitch
+  build:
+    context: ./freeswitch
+  image: voxharbor/freeswitch:1.10.12-r3
+  tty: true
+  stdin_open: true
+  restart: unless-stopped
+  volumes:
+    - ./freeswitch/conf/vars.xml:/etc/freeswitch/vars.xml:ro
+    - ./freeswitch/conf/sip_profiles/internal.xml:/etc/freeswitch/sip_profiles/internal.xml:ro
+    - ./freeswitch/conf/dialplan/default.xml:/etc/freeswitch/dialplan/default.xml:ro
+
+services:
+  fs1:
+    <<: *freeswitch
+    container_name: fs1
+    hostname: fs1
+    environment:
+      NODE_NAME: fs1
+      EXTERNAL_IP: ${EXTERNAL_IP:?set EXTERNAL_IP in .env}
+      FS_DEFAULT_PASSWORD: ${FS_DEFAULT_PASSWORD:?set FS_DEFAULT_PASSWORD in .env}
+    networks:
+      voxnet:
+        ipv4_address: 172.28.0.31
+    # Phase 1 only: phones register directly to fs1. Removed once Kamailio fronts it.
+    ports:
+      - "5080:5080/udp"
+      - "16384-16484:16384-16484/udp"
+
+  sipp:
+    build:
+      context: ./sipp
+    image: voxharbor/sipp:3.7.3
+    container_name: sipp
+    hostname: sipp
+    init: true
+    cap_add: [NET_ADMIN, NET_RAW]
+    volumes:
+      - ./sipp/scenarios:/sipp/scenarios
+    networks:
+      voxnet:
+        ipv4_address: 172.28.0.50
