@@ -16,6 +16,9 @@
     <!-- No media relay until Phase 4: phones send RTP straight to the host-published range -->
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
     <param name="local-network-acl" value="nobody"/>
+    <!-- WebRTC (browser console): accept private ICE candidates, default is public-only -->
+    <param name="apply-candidate-acl" value="rfc1918.auto"/>
+    <param name="apply-candidate-acl" value="wan.auto"/>
 
     <param name="apply-inbound-acl" value="kamailio"/>
     <param name="auth-calls" value="false"/>

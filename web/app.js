@@ -136,7 +136,7 @@ class Line {
     ua.on('connected', () => this.log(`WebSocket connected ${ws}`));
     ua.on('disconnected', () => { if (this.ua === ua) { this.setStatus('Disconnected', 'bad'); this.log('WebSocket disconnected', 'err'); } });
     ua.on('registered', () => { this.setStatus(`Registered ${user}`, 'ok'); this.log(`Registered as ${user}`, 'ok'); this.syncButtons(); });
-    ua.on('unregistered', () => { this.setStatus('Unregistered', 'off'); this.syncButtons(); });
+    ua.on('unregistered', () => { if (this.ua === ua) { this.setStatus('Unregistered', 'off'); this.syncButtons(); } });
     ua.on('registrationFailed', (e) => {
       const code = e.response ? `${e.response.status_code} ${e.response.reason_phrase}` : e.cause;
       this.setStatus('Registration failed', 'bad'); this.log(`Registration failed: ${code}`, 'err'); this.syncButtons();
