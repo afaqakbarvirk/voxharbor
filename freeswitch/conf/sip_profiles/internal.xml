@@ -16,6 +16,8 @@
     <param name="ext-sip-ip" value="$${external_sip_ip}"/>
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
     <param name="local-network-acl" value="localnet.auto"/>
+    <!-- WebRTC: SIP over WebSocket for the browser test console (web/) -->
+    <param name="ws-binding" value=":5066"/>
 
     <!-- NAT: Windows softphone reaches us through Docker DNAT -->
     <param name="apply-nat-acl" value="rfc1918.auto"/>

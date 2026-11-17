@@ -34,7 +34,20 @@ services:
     # Phase 1 only: phones register directly to fs1. Removed once Kamailio fronts it.
     ports:
       - "5080:5080/udp"
+      - "5066:5066/tcp"
       - "16384-16484:16384-16484/udp"
+
+  web:
+    image: nginx:1.27.5-alpine
+    container_name: web
+    restart: unless-stopped
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    networks:
+      voxnet:
+        ipv4_address: 172.28.0.60
+    ports:
+      - "8080:80"
 
   sipp:
     build:

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VoxHarbor Console</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- JsSIP 3.10.1 bundled with esbuild (npm no longer ships a browser build) -->
+  <script src="vendor/jssip-3.10.1.min.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◈</span>
+      <div>
+        <h1>VoxHarbor Console</h1>
+        <p class="sub">Browser softphones for testing the SIP platform</p>
+      </div>
+    </div>
+    <form class="settings" id="settings" autocomplete="off">
+      <label>WebSocket
+        <input id="wsUrl" value="ws://localhost:5066" spellcheck="false">
+      </label>
+      <label>SIP domain
+        <input id="sipDomain" value="localhost" spellcheck="false">
+      </label>
+    </form>
+  </header>
+
+  <main>
+    <section class="lines" id="lines"></section>
+
+    <section class="panel log-panel">
+      <div class="panel-head">
+        <h2>Event log</h2>
+        <button class="ghost small" id="clearLog" type="button">Clear</button>
+      </div>
+      <ol class="log" id="log"></ol>
+    </section>
+
+    <p class="hint">Use a headset when testing both lines at once, or the two lines will feed back into each other.
+      The page must be opened as <code>http://localhost:8080</code>; browsers block the mic on plain-HTTP IP addresses.</p>
+  </main>
+
+  <template id="lineTpl">
+    <article class="panel line">
+      <div class="panel-head">
+        <h2 data-ref="title">Line</h2>
+        <span class="pill" data-ref="status" data-state="off">Offline</span>
+      </div>
+
+      <form class="creds" data-ref="creds" autocomplete="off">
+        <label>Extension <input data-ref="user" inputmode="numeric" spellcheck="false"></label>
+        <label>Password <input data-ref="pass" type="password"></label>
+        <button class="primary" data-ref="regBtn" type="submit">Register</button>
+      </form>
+
+      <div class="dialer">
+        <div class="dial-row">
+          <input data-ref="target" class="target" placeholder="Number to dial" inputmode="numeric" spellcheck="false">
+          <button class="call" data-ref="callBtn" type="button" disabled>Call</button>
+        </div>
+        <div class="chips" data-ref="chips"></div>
+        <div class="keypad" data-ref="keypad"></div>
+      </div>
+
+      <div class="callbox" data-ref="callbox" hidden>
+        <div class="call-head">
+          <div>
+            <div class="call-peer" data-ref="peer">—</div>
+            <div class="call-state" data-ref="callState">Idle</div>
+          </div>
+          <div class="timer" data-ref="timer">00:00</div>
+        </div>
+        <div class="call-actions">
+          <button class="call" data-ref="answerBtn" type="button" hidden>Answer</button>
+          <button class="ghost" data-ref="muteBtn" type="button">Mute</button>
+          <button class="hang" data-ref="hangBtn" type="button">Hang up</button>
+        </div>
+        <dl class="stats">
+          <div><dt>Codec</dt><dd data-ref="sCodec">—</dd></div>
+          <div><dt>Sent pkts</dt><dd data-ref="sSent">0</dd></div>
+          <div><dt>Recv pkts</dt><dd data-ref="sRecv">0</dd></div>
+          <div><dt>Lost</dt><dd data-ref="sLost">0</dd></div>
+          <div><dt>Jitter</dt><dd data-ref="sJitter">—</dd></div>
+          <div><dt>Remote</dt><dd data-ref="sRemote">—</dd></div>
+        </dl>
+        <div class="meters">
+          <div class="meter"><span>Mic</span><div class="bar"><i data-ref="mOut"></i></div></div>
+          <div class="meter"><span>Speaker</span><div class="bar"><i data-ref="mIn"></i></div></div>
+        </div>
+      </div>
+      <audio data-ref="audio" autoplay></audio>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
