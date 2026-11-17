@@ -31,10 +31,12 @@ document.getElementById('clearLog').onclick = () => { logEl.innerHTML = ''; };
 /* ---------- global settings ---------- */
 const wsInput = document.getElementById('wsUrl');
 const domainInput = document.getElementById('sipDomain');
-const saved = store.get('settings');
+// Default: same-origin /ws, proxied by nginx to Kamailio's WebSocket listener
+wsInput.value = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+const saved = store.get('settings2');
 if (saved) { wsInput.value = saved.ws || wsInput.value; domainInput.value = saved.domain || domainInput.value; }
 const settings = () => ({ ws: wsInput.value.trim(), domain: domainInput.value.trim() });
-[wsInput, domainInput].forEach((el) => el.addEventListener('change', () => store.set('settings', settings())));
+[wsInput, domainInput].forEach((el) => el.addEventListener('change', () => store.set('settings2', settings())));
 
 /* ---------- ringtone (WebAudio, no asset needed) ---------- */
 let audioCtx;

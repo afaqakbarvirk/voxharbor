@@ -1,29 +1,27 @@
-<!-- Phase 1: phones register directly with digest auth (FreeSWITCH directory). -->
+<!-- Phase 2: FreeSWITCH sits behind Kamailio. No registrations, no auth;
+     SIP accepted only from Kamailio's IP (acl.conf.xml "kamailio"). -->
 <profile name="internal">
   <gateways/>
   <domains>
-    <domain name="all" alias="true" parse="false"/>
+    <domain name="all" alias="false" parse="false"/>
   </domains>
   <settings>
     <param name="debug" value="0"/>
     <param name="sip-trace" value="no"/>
-    <param name="log-auth-failures" value="true"/>
     <param name="context" value="default"/>
     <param name="dialplan" value="XML"/>
     <param name="sip-port" value="$${internal_sip_port}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="rtp-ip" value="$${local_ip_v4}"/>
-    <param name="ext-sip-ip" value="$${external_sip_ip}"/>
+    <!-- No media relay until Phase 4: phones send RTP straight to the host-published range -->
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
-    <param name="local-network-acl" value="localnet.auto"/>
-    <!-- WebRTC: SIP over WebSocket for the browser test console (web/) -->
-    <param name="ws-binding" value=":5066"/>
+    <param name="local-network-acl" value="nobody"/>
 
-    <!-- NAT: Windows softphone reaches us through Docker DNAT -->
-    <param name="apply-nat-acl" value="rfc1918.auto"/>
-    <param name="aggressive-nat-detection" value="true"/>
-    <param name="NDLB-received-in-nat-reg-contact" value="true"/>
-    <param name="NDLB-force-rport" value="true"/>
+    <param name="apply-inbound-acl" value="kamailio"/>
+    <param name="auth-calls" value="false"/>
+    <param name="disable-register" value="true"/>
+    <param name="accept-blind-reg" value="false"/>
+    <param name="accept-blind-auth" value="false"/>
 
     <param name="inbound-codec-prefs" value="$${global_codec_prefs}"/>
     <param name="outbound-codec-prefs" value="$${outbound_codec_prefs}"/>
@@ -34,14 +32,6 @@
     <param name="rtp-timeout-sec" value="300"/>
     <param name="rtp-hold-timeout-sec" value="1800"/>
 
-    <param name="auth-calls" value="true"/>
-    <param name="accept-blind-reg" value="false"/>
-    <param name="accept-blind-auth" value="false"/>
-    <param name="challenge-realm" value="auto_from"/>
-    <param name="force-register-domain" value="$${domain}"/>
-    <param name="force-subscription-domain" value="$${domain}"/>
-    <param name="force-register-db-domain" value="$${domain}"/>
-    <param name="nonce-ttl" value="60"/>
     <param name="manage-presence" value="false"/>
     <param name="user-agent-string" value="VoxHarbor-$${node_name}"/>
   </settings>

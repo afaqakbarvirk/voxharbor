@@ -10,12 +10,12 @@
       </condition>
     </extension>
 
-    <!-- 1001-1099: local users -->
+    <!-- 1001-1099: users live in Kamailio's location table; hand the B-leg back to Kamailio -->
     <extension name="local_users">
       <condition field="destination_number" expression="^(10(?:0[1-9]|[1-9][0-9]))$">
         <action application="set" data="hangup_after_bridge=true"/>
         <action application="set" data="call_timeout=30"/>
-        <action application="bridge" data="user/$1@$${domain}"/>
+        <action application="bridge" data="sofia/internal/$1@172.28.0.10:5070"/>
       </condition>
     </extension>
 

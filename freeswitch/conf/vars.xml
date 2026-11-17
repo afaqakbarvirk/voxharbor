@@ -1,6 +1,5 @@
 <include>
   <!-- Secrets / host-specific values come from the container environment (.env) -->
-  <X-PRE-PROCESS cmd="exec-set" data="default_password=printenv FS_DEFAULT_PASSWORD"/>
   <X-PRE-PROCESS cmd="exec-set" data="ext_ip=printenv EXTERNAL_IP"/>
   <X-PRE-PROCESS cmd="exec-set" data="node_name=printenv NODE_NAME"/>
 

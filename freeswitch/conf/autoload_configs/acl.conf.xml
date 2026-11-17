@@ -1,0 +1,10 @@
+<configuration name="acl.conf" description="Network Lists">
+  <network-lists>
+    <!-- Only the Kamailio edge proxy may send SIP to FreeSWITCH -->
+    <list name="kamailio" default="deny">
+      <node type="allow" cidr="172.28.0.10/32"/>
+    </list>
+    <!-- Matches nothing: makes FreeSWITCH always advertise ext-rtp-ip in SDP -->
+    <list name="nobody" default="deny"/>
+  </network-lists>
+</configuration>
