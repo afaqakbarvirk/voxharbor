@@ -1,0 +1,4 @@
+# setid  destination              flags priority attrs
+# Set 1: FreeSWITCH media/app nodes, reached from Kamailio's core-side socket.
+1 sip:172.28.0.31:5080 0 0 duid=fs1;socket=udp:172.28.0.10:5070
+1 sip:172.28.0.32:5080 0 0 duid=fs2;socket=udp:172.28.0.10:5070

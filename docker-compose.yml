@@ -65,6 +65,7 @@ services:
       EXTERNAL_IP: ${EXTERNAL_IP:?set in .env}
     volumes:
       - ./kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg:ro
+      - ./kamailio/dispatcher.list:/etc/kamailio/dispatcher.list:ro
     networks:
       voxnet:
         ipv4_address: 172.28.0.10
@@ -79,12 +80,30 @@ services:
     environment:
       NODE_NAME: fs1
       EXTERNAL_IP: ${EXTERNAL_IP}
+      RTP_START_PORT: 16384
+      RTP_END_PORT: 16484
     networks:
       voxnet:
         ipv4_address: 172.28.0.31
-    # SIP stays internal (Kamailio only). RTP range published until rtpengine takes over in Phase 4.
+    # SIP stays internal (Kamailio only). RTP published until rtpengine takes over in Phase 4;
+    # until then each node needs its own host port range.
     ports:
       - "16384-16484:16384-16484/udp"
+
+  fs2:
+    <<: *freeswitch
+    container_name: fs2
+    hostname: fs2
+    environment:
+      NODE_NAME: fs2
+      EXTERNAL_IP: ${EXTERNAL_IP}
+      RTP_START_PORT: 16500
+      RTP_END_PORT: 16600
+    networks:
+      voxnet:
+        ipv4_address: 172.28.0.32
+    ports:
+      - "16500-16600:16500-16600/udp"
 
   web:
     image: nginx:1.27.5-alpine

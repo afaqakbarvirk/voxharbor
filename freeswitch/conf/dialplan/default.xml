@@ -10,6 +10,24 @@
       </condition>
     </extension>
 
+    <!-- 9999: say which node answered (verifies load balancing) -->
+    <extension name="which_node">
+      <condition field="destination_number" expression="^9999$"/>
+      <condition field="${hostname}" expression="^fs(\d+)$">
+        <action application="answer"/>
+        <action application="sleep" data="300"/>
+        <!-- "You are number <N>" from the stock prompt pack, said twice -->
+        <action application="playback" data="tone_stream://%(200,0,800)"/>
+        <action application="playback" data="ivr/ivr-you_are_number.wav"/>
+        <action application="playback" data="digits/$1.wav"/>
+        <action application="sleep" data="600"/>
+        <action application="playback" data="ivr/ivr-you_are_number.wav"/>
+        <action application="playback" data="digits/$1.wav"/>
+        <action application="sleep" data="500"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
     <!-- 1001-1099: users live in Kamailio's location table; hand the B-leg back to Kamailio -->
     <extension name="local_users">
       <condition field="destination_number" expression="^(10(?:0[1-9]|[1-9][0-9]))$">

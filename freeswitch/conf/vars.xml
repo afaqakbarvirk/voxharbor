@@ -8,8 +8,9 @@
   <X-PRE-PROCESS cmd="set" data="hostname=$${node_name}"/>
 
   <X-PRE-PROCESS cmd="set" data="internal_sip_port=5080"/>
-  <X-PRE-PROCESS cmd="set" data="rtp_start_port=16384"/>
-  <X-PRE-PROCESS cmd="set" data="rtp_end_port=16484"/>
+  <!-- Per-node RTP range (distinct per node while RTP is published straight to the host) -->
+  <X-PRE-PROCESS cmd="exec-set" data="rtp_start_port=printenv RTP_START_PORT"/>
+  <X-PRE-PROCESS cmd="exec-set" data="rtp_end_port=printenv RTP_END_PORT"/>
   <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
   <X-PRE-PROCESS cmd="set" data="external_rtp_ip=$${ext_ip}"/>
   <X-PRE-PROCESS cmd="set" data="external_sip_ip=$${ext_ip}"/>
