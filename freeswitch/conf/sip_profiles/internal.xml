@@ -15,6 +15,9 @@
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <!-- No media relay until Phase 4: phones send RTP straight to the host-published range -->
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
+    <!-- FreeSWITCH only applies ext-rtp-ip when ext-sip-ip is set. Point SIP at our own
+         internal IP so signalling stays on voxnet while SDP advertises the host IP. -->
+    <param name="ext-sip-ip" value="$${local_ip_v4}"/>
     <param name="local-network-acl" value="nobody"/>
     <!-- WebRTC (browser console): accept private ICE candidates, default is public-only -->
     <param name="apply-candidate-acl" value="rfc1918.auto"/>
