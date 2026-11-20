@@ -1,5 +1,13 @@
 name: voxharbor
 
+# Signaling and media are separated:
+#   kamailio  - SIP proxy, registrar, auth, load balancer, security   (5060 published)
+#   rtpengine - media relay / NAT / WebRTC bridge                        (RTP 30000-30100 published)
+#   fs1, fs2  - FreeSWITCH B2BUA nodes (dialplan, IVR, echo)            (internal only)
+#   mysql     - subscribers (HA1) + location                            (internal only)
+#   web       - browser test console + WebSocket proxy to Kamailio      (8080 published)
+#   sipp      - load / failover test client                             (internal only)
+
 networks:
   voxnet:
     driver: bridge
@@ -47,7 +55,31 @@ services:
     networks:
       voxnet:
         ipv4_address: 172.28.0.40
-    # no host ports: MySQL stays private to voxnet
+
+  rtpengine:
+    build:
+      context: ./rtpengine
+    image: voxharbor/rtpengine:12.2.1.4
+    container_name: rtpengine
+    hostname: rtpengine
+    restart: unless-stopped
+    environment:
+      EXTERNAL_IP: ${EXTERNAL_IP:?set in .env}
+    command:
+      - sh
+      - -c
+      - >-
+        exec rtpengine --config-file=/etc/rtpengine/rtpengine.conf
+        --interface=internal/172.28.0.20
+        --interface=external/172.28.0.20!$${EXTERNAL_IP}
+    volumes:
+      - ./rtpengine/rtpengine.conf:/etc/rtpengine/rtpengine.conf:ro
+    networks:
+      voxnet:
+        ipv4_address: 172.28.0.20
+    # RTP only. The ng control port (2223/udp) stays on voxnet.
+    ports:
+      - "30000-30100:30000-30100/udp"
 
   kamailio:
     build:
@@ -59,10 +91,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      rtpengine:
+        condition: service_started
     environment:
       KAMAILIO_DBURL: mysql://kamailio:${MYSQL_PASSWORD}@172.28.0.40/kamailio
       SIP_REALM: ${SIP_REALM}
-      EXTERNAL_IP: ${EXTERNAL_IP:?set in .env}
+      EXTERNAL_IP: ${EXTERNAL_IP}
     volumes:
       - ./kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg:ro
       - ./kamailio/dispatcher.list:/etc/kamailio/dispatcher.list:ro
@@ -79,16 +113,9 @@ services:
     hostname: fs1
     environment:
       NODE_NAME: fs1
-      EXTERNAL_IP: ${EXTERNAL_IP}
-      RTP_START_PORT: 16384
-      RTP_END_PORT: 16484
     networks:
       voxnet:
         ipv4_address: 172.28.0.31
-    # SIP stays internal (Kamailio only). RTP published until rtpengine takes over in Phase 4;
-    # until then each node needs its own host port range.
-    ports:
-      - "16384-16484:16384-16484/udp"
 
   fs2:
     <<: *freeswitch
@@ -96,14 +123,9 @@ services:
     hostname: fs2
     environment:
       NODE_NAME: fs2
-      EXTERNAL_IP: ${EXTERNAL_IP}
-      RTP_START_PORT: 16500
-      RTP_END_PORT: 16600
     networks:
       voxnet:
         ipv4_address: 172.28.0.32
-    ports:
-      - "16500-16600:16500-16600/udp"
 
   web:
     image: nginx:1.27.5-alpine
@@ -125,6 +147,7 @@ services:
     container_name: sipp
     hostname: sipp
     init: true
+    restart: unless-stopped
     cap_add: [NET_ADMIN, NET_RAW]
     volumes:
       - ./sipp/scenarios:/sipp/scenarios

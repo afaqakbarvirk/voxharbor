@@ -36,7 +36,7 @@ function hydrateIcons(root) {
 const QUICK = [
   { num: '9196', label: 'Echo', icon: 'wave' },
   { num: '9999', label: 'Which node', icon: 'server' },
-  { num: '5000', label: 'IVR', icon: 'menu', soon: true },
+  { num: '5000', label: 'IVR', icon: 'menu' },
   { other: true, label: 'Other line', icon: 'user' },
 ];
 const NAMES = { 9196: 'Echo test', 9999: 'Which node', 5000: 'Demo IVR' };

@@ -10,6 +10,39 @@
       </condition>
     </extension>
 
+    <!-- 5000: demo IVR. 1 = echo test, 2 = which node answered, 9 = repeat -->
+    <extension name="demo_ivr">
+      <condition field="destination_number" expression="^5000$">
+        <action application="answer"/>
+        <action application="sleep" data="500"/>
+        <action application="playback" data="ivr/ivr-welcome_to_freeswitch.wav"/>
+        <action application="set" data="ivr_menu=file_string://ivr/ivr-to_do_a_freeswitch_echo_test.wav!voicemail/vm-press.wav!digits/1.wav!silence_stream://400!ivr/ivr-for_other_options.wav!voicemail/vm-press.wav!digits/2.wav!silence_stream://400!ivr/ivr-to_repeat_these_options.wav!voicemail/vm-press.wav!digits/9.wav"/>
+        <action application="play_and_get_digits" data="1 1 3 5000 # ${ivr_menu} ivr/ivr-that_was_an_invalid_entry.wav ivr_choice ^[129]$"/>
+        <action application="transfer" data="ivr_${ivr_choice} XML default"/>
+      </condition>
+    </extension>
+    <extension name="ivr_echo">
+      <condition field="destination_number" expression="^ivr_1$">
+        <action application="transfer" data="9196 XML default"/>
+      </condition>
+    </extension>
+    <extension name="ivr_node">
+      <condition field="destination_number" expression="^ivr_2$">
+        <action application="transfer" data="9999 XML default"/>
+      </condition>
+    </extension>
+    <extension name="ivr_repeat">
+      <condition field="destination_number" expression="^ivr_9$">
+        <action application="transfer" data="5000 XML default"/>
+      </condition>
+    </extension>
+    <extension name="ivr_no_input">
+      <condition field="destination_number" expression="^ivr_$">
+        <action application="playback" data="ivr/ivr-thank_you_for_calling.wav"/>
+        <action application="hangup"/>
+      </condition>
+    </extension>
+
     <!-- 9999: say which node answered (verifies load balancing) -->
     <extension name="which_node">
       <condition field="destination_number" expression="^9999$"/>

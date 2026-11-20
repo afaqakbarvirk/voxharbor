@@ -42,3 +42,20 @@ Lab host: Intel Core i7-10750H (12 threads visible to WSL), Windows 10 Pro (1904
 | 40 calls at 2 cps, `docker stop fs1` at 6 s | **39/40 OK** (1 call in progress on fs1 dropped). Kamailio logged `fs1 failed (408), marking down` → `retrying on fs2`. fs1 flagged `IP` ✅ |
 | `docker start fs1` | back to `AP` in **4 s**. The next 10 calls split **5 / 5** ✅ |
 | 1001 → 1002 (phone → Kamailio → FS → Kamailio → phone) ×2 | 2/2 OK, no loop ✅ |
+
+## Phase 4: Media relay + security (2026-11-20)
+
+- rtpengine 12.2.1.4 (Alpine, userspace forwarding) at 172.28.0.20. Kamailio controls it over ng (2223/udp, voxnet only).
+- Two logical interfaces on one address: `internal` (FreeSWITCH side) and `external!<host IP>` (phone side). Only RTP 30000-30100 is published to the host. FreeSWITCH is no longer reachable from the host for SIP or RTP.
+- Kamailio runs `rtpengine_manage` on both legs. The phone side gets WebRTC (DTLS-SRTP, ICE, rtcp-mux) for browsers and plain RTP otherwise; the FreeSWITCH side always gets plain RTP/AVP. Codecs are restricted to Opus/PCMU/PCMA (+ telephone-event).
+- Security: `pike` (>250 requests per 2 s from one IP) feeds an `htable` ban list (5 min). Scanner User-Agents are dropped silently. FreeSWITCH nodes and the WebSocket proxy are exempt.
+
+| Test | Result |
+|---|---|
+| SIPp → 9196 with real audio (`g711a.pcap`) | Phone leg `30004`: **in 236 / out 219 pkts**. fs2 leg `30062↔16386`: **in 219 / out 236**. Audio relayed both ways ✅ |
+| Phone-side SDP | `c=192.168.159.121`, port in 30000-30100 ✅ (FreeSWITCH sees `172.28.0.20`) |
+| WebRTC-style offer → 9196 | Answer `UDP/TLS/RTP/SAVPF` with rtpengine fingerprint, ICE candidate on host IP, `setup:passive` ✅ |
+| IVR 5000 + RFC 2833 DTMF "1" through rtpengine | FreeSWITCH `RECV DTMF 1` → transfer to echo ✅ |
+| OPTIONS with UA `friendly-scanner` / `SIPVicious 0.3.4` / `sipcli/v1.8` | No response (dropped, logged) ✅. A normal UA gets 200 ✅ |
+| Flood: 3000 OPTIONS at 500/s from 172.28.0.66 | Banned at request **#510 (~1 s)**. Every later request from that IP is ignored; other clients unaffected ✅ |
+| Regression: 10× 9999, 1001→1002 | 5/5 split, call OK ✅ |

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+<!-- OPTIONS probe with a chosen User-Agent. Used for the scanner-filter and flood tests.
+     Usage: sipp <proxy> -sf options.xml -key ua "<User-Agent>" [-r <rate>] [-nr] -->
+<scenario name="OPTIONS probe">
+  <send>
+    <![CDATA[
+      OPTIONS sip:[remote_ip]:[remote_port] SIP/2.0
+      Via: SIP/2.0/[transport] [local_ip]:[local_port];branch=[branch]
+      From: <sip:probe@[local_ip]>;tag=[pid]SIPpTag[call_number]
+      To: <sip:[remote_ip]:[remote_port]>
+      Call-ID: [call_id]
+      CSeq: 1 OPTIONS
+      Max-Forwards: 70
+      User-Agent: [ua]
+      Content-Length: 0
+    ]]>
+  </send>
+
+  <recv response="200" timeout="2000"/>
+</scenario>
