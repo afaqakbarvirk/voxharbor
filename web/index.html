@@ -4,92 +4,138 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VoxHarbor Console</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Cpath d='M6 16h4l3-7 5 14 3-7h5' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <!-- JsSIP 3.10.1 bundled with esbuild (npm no longer ships a browser build) -->
   <script src="vendor/jssip-3.10.1.min.js"></script>
 </head>
 <body>
-  <header class="top">
+  <header class="topbar">
     <div class="brand">
-      <span class="logo" aria-hidden="true">◈</span>
+      <span class="brand-mark" data-icon="wave"></span>
       <div>
-        <h1>VoxHarbor Console</h1>
-        <p class="sub">Browser softphones for testing the SIP platform</p>
+        <div class="brand-name">VoxHarbor</div>
+        <div class="brand-sub">SIP test console</div>
       </div>
     </div>
-    <form class="settings" id="settings" autocomplete="off">
-      <label>WebSocket
-        <input id="wsUrl" value="" spellcheck="false">
-      </label>
-      <label>SIP domain
-        <input id="sipDomain" value="localhost" spellcheck="false">
-      </label>
-    </form>
+    <div class="top-actions">
+      <span class="gw" id="gw" data-tone="off"><i></i><span id="gwText">All lines offline</span></span>
+      <button class="icon-btn" id="themeBtn" type="button" title="Toggle light / dark"></button>
+      <button class="icon-btn" id="settingsBtn" type="button" title="Connection settings" data-icon="sliders"></button>
+      <button class="icon-btn" id="logBtn" type="button" title="Event log" data-icon="list">
+        <span class="badge" id="logBadge" hidden>0</span>
+      </button>
+    </div>
   </header>
 
-  <main>
-    <section class="lines" id="lines"></section>
-
-    <section class="panel log-panel">
-      <div class="panel-head">
-        <h2>Event log</h2>
-        <button class="ghost small" id="clearLog" type="button">Clear</button>
-      </div>
-      <ol class="log" id="log"></ol>
-    </section>
-
-    <p class="hint">Use a headset when testing both lines at once, or the two lines will feed back into each other.
-      The page must be opened as <code>http://localhost:8080</code>; browsers block the mic on plain-HTTP IP addresses.</p>
+  <main class="stage">
+    <div class="phones" id="phones"></div>
+    <p class="foot">
+      Type digits on your keyboard · <kbd>Enter</kbd> call / answer · <kbd>Esc</kbd> hang up.
+      Use a headset when both lines are on a call.
+    </p>
   </main>
 
-  <template id="lineTpl">
-    <article class="panel line">
-      <div class="panel-head">
-        <h2 data-ref="title">Line</h2>
-        <span class="pill" data-ref="status" data-state="off">Offline</span>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" aria-label="Event log">
+    <div class="drawer-head">
+      <h2>Event log</h2>
+      <div class="drawer-tools">
+        <button class="text-btn" id="clearLog" type="button">Clear</button>
+        <button class="icon-btn" id="closeDrawer" type="button" title="Close" data-icon="x"></button>
       </div>
+    </div>
+    <ol class="log" id="log"></ol>
+  </aside>
 
-      <form class="creds" data-ref="creds" autocomplete="off">
-        <label>Extension <input data-ref="user" inputmode="numeric" spellcheck="false"></label>
-        <label>Password <input data-ref="pass" type="password"></label>
-        <button class="primary" data-ref="regBtn" type="submit">Register</button>
+  <dialog id="settingsDlg">
+    <form method="dialog" class="dlg">
+      <h2>Connection</h2>
+      <label class="field"><span>WebSocket URL</span><input id="wsUrl" spellcheck="false"></label>
+      <label class="field"><span>SIP domain</span><input id="sipDomain" spellcheck="false"></label>
+      <p class="muted">The default goes through this page's <code>/ws</code> proxy to Kamailio. Sign in again after changing it.</p>
+      <div class="dlg-actions">
+        <button class="btn ghost" value="cancel">Cancel</button>
+        <button class="btn primary" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <template id="phoneTpl">
+    <article class="phone" data-view="offline">
+      <header class="phone-head">
+        <div class="avatar" data-ref="avatar">A</div>
+        <div class="who">
+          <div class="line-name" data-ref="name">Line A</div>
+          <div class="line-ext" data-ref="extLabel">Not signed in</div>
+        </div>
+        <span class="status" data-ref="status" data-tone="off"><i></i><span data-ref="statusText">Offline</span></span>
+      </header>
+
+      <!-- signed out -->
+      <form class="pane login" data-pane="offline" data-ref="login" autocomplete="off">
+        <div class="login-hero">
+          <span class="hero-icon" data-icon="phone"></span>
+          <h3 data-ref="heroTitle">Sign in</h3>
+          <p>Register this line with Kamailio</p>
+        </div>
+        <label class="field"><span>Extension</span><input data-ref="user" inputmode="numeric" spellcheck="false"></label>
+        <label class="field"><span>Password</span>
+          <span class="pw">
+            <input data-ref="pass" type="password">
+            <button type="button" class="icon-btn sm" data-ref="eye" title="Show password" data-icon="eye"></button>
+          </span>
+        </label>
+        <label class="check"><input type="checkbox" data-ref="remember"> Remember on this device</label>
+        <button class="btn primary block" data-ref="connectBtn" type="submit">Sign in</button>
       </form>
 
-      <div class="dialer">
-        <div class="dial-row">
-          <input data-ref="target" class="target" placeholder="Number to dial" inputmode="numeric" spellcheck="false">
-          <button class="call" data-ref="callBtn" type="button" disabled>Call</button>
+      <!-- registered, idle -->
+      <section class="pane dialer" data-pane="idle">
+        <div class="display">
+          <input data-ref="number" class="number" placeholder="Enter number" inputmode="tel" autocomplete="off" spellcheck="false">
+          <button type="button" class="icon-btn" data-ref="back" title="Delete" data-icon="backspace"></button>
         </div>
-        <div class="chips" data-ref="chips"></div>
+        <div class="quick" data-ref="quick"></div>
         <div class="keypad" data-ref="keypad"></div>
-      </div>
+        <div class="dial-actions">
+          <button type="button" class="round call" data-ref="callBtn" title="Call" data-icon="phone"></button>
+        </div>
+        <button type="button" class="text-btn signout" data-ref="signout"><span data-icon="logout"></span>Sign out</button>
+      </section>
 
-      <div class="callbox" data-ref="callbox" hidden>
-        <div class="call-head">
-          <div>
-            <div class="call-peer" data-ref="peer">—</div>
-            <div class="call-state" data-ref="callState">Idle</div>
-          </div>
-          <div class="timer" data-ref="timer">00:00</div>
+      <!-- on a call -->
+      <section class="pane incall" data-pane="call">
+        <div class="peer-wrap"><div class="peer-avatar" data-ref="peerAvatar"></div></div>
+        <div class="peer" data-ref="peer">—</div>
+        <div class="peer-sub" data-ref="peerSub"></div>
+        <div class="call-state" data-ref="callState">Calling…</div>
+
+        <div class="viz">
+          <div class="viz-row"><span>You</span><div class="bars out" data-ref="barsOut"></div></div>
+          <div class="viz-row"><span>Remote</span><div class="bars in" data-ref="barsIn"></div></div>
         </div>
+
+        <div class="stats" data-ref="stats">
+          <span class="flow" data-ref="sFlow" hidden><span data-icon="check"></span>Audio flowing</span>
+          <span data-ref="sCodec">—</span>
+          <span data-ref="sPkts">↑ 0 · ↓ 0</span>
+          <span data-ref="sJitter">jitter —</span>
+          <span data-ref="sLoss">loss 0</span>
+        </div>
+
+        <div class="keypad small" data-ref="dtmf" hidden></div>
+
         <div class="call-actions">
-          <button class="call" data-ref="answerBtn" type="button" hidden>Answer</button>
-          <button class="ghost" data-ref="muteBtn" type="button">Mute</button>
-          <button class="hang" data-ref="hangBtn" type="button">Hang up</button>
+          <button type="button" class="round soft" data-ref="muteBtn" title="Mute" data-icon="mic"></button>
+          <button type="button" class="round soft" data-ref="padBtn" title="Keypad" data-icon="grid"></button>
+          <button type="button" class="round call" data-ref="answerBtn" title="Answer" data-icon="phone" hidden></button>
+          <button type="button" class="round hang" data-ref="hangBtn" title="Hang up" data-icon="hangup"></button>
         </div>
-        <dl class="stats">
-          <div><dt>Codec</dt><dd data-ref="sCodec">—</dd></div>
-          <div><dt>Sent pkts</dt><dd data-ref="sSent">0</dd></div>
-          <div><dt>Recv pkts</dt><dd data-ref="sRecv">0</dd></div>
-          <div><dt>Lost</dt><dd data-ref="sLost">0</dd></div>
-          <div><dt>Jitter</dt><dd data-ref="sJitter">—</dd></div>
-          <div><dt>Remote</dt><dd data-ref="sRemote">—</dd></div>
-        </dl>
-        <div class="meters">
-          <div class="meter"><span>Mic</span><div class="bar"><i data-ref="mOut"></i></div></div>
-          <div class="meter"><span>Speaker</span><div class="bar"><i data-ref="mIn"></i></div></div>
-        </div>
-      </div>
+      </section>
+
       <audio data-ref="audio" autoplay></audio>
     </article>
   </template>
