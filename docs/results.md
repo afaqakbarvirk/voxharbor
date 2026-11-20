@@ -59,3 +59,34 @@ Lab host: Intel Core i7-10750H (12 threads visible to WSL), Windows 10 Pro (1904
 | OPTIONS with UA `friendly-scanner` / `SIPVicious 0.3.4` / `sipcli/v1.8` | No response (dropped, logged) ✅. A normal UA gets 200 ✅ |
 | Flood: 3000 OPTIONS at 500/s from 172.28.0.66 | Banned at request **#510 (~1 s)**. Every later request from that IP is ignored; other clients unaffected ✅ |
 | Regression: 10× 9999, 1001→1002 | 5/5 split, call OK ✅ |
+
+## Phase 5: Load and failover proof (2026-11-20)
+
+Hardware: Intel Core i7-10750H @ 2.60 GHz (12 vCPU visible to WSL2), 7.6 GiB RAM, Windows 10 Pro + WSL2 Ubuntu 26.04, Docker 29.10.0. Everything runs on one laptop, SIPp included.
+
+### Load: `scripts/load-test.sh` (SIPp → Kamailio → rtpengine → fs1/fs2 echo, 1 s hold)
+
+| Rate | Calls | Success | Failed | Success % | Setup avg (INVITE → 200, incl. auth round) | Peak concurrent | Peak CPU kamailio / fs1 / fs2 / rtpengine |
+|---|---|---|---|---|---|---|---|
+| 5 cps | 200 | 200 | 0 | 100.0 | 8.0 ms | 6 | 6% / 8% / 8% / 1% |
+| 10 cps | 200 | 200 | 0 | 100.0 | 8.0 ms | 11 | 7% / 10% / 11% / 2% |
+| 20 cps | 200 | 200 | 0 | 100.0 | 8.0 ms | 21 | 6% / 10% / 14% / 3% |
+
+Memory after the run: Kamailio 24 MiB, fs1 29 MiB, fs2 29 MiB, rtpengine 7.5 MiB, MySQL 474 MiB.
+
+What limits the rate here is the lab's own configuration, not CPU:
+- `pike` bans one source IP above 250 requests per 2 s, which is about 25 calls/s from a single SIPp.
+- The 101-port RTP range carries about 25 concurrent calls.
+
+Both are deliberate settings; raise them (and use several load sources) to push further. These runs are signalling-only. Real audio through the relay is proven separately in Phase 4.
+
+### Failover: `scripts/failover-test.sh` (60 calls to 9999 at 2 cps, `docker stop -t 0 fs1` after 8 s)
+
+| Metric | Value |
+|---|---|
+| Successful / failed | **58 / 2**. The 2 failures were calls in progress on fs1 at the moment it was killed |
+| fs1 detected down by Kamailio | **≤ 2 s** (the first INVITE to it timed out, then `ds_mark_dst`) |
+| New calls retried instantly on fs2 | 2 |
+| Calls answered by fs1 / fs2 | 8 / 52 |
+| fs1 back in rotation after `docker start` | **4 s** |
+| 10 calls after rejoin, fs1 / fs2 | **5 / 5** |
