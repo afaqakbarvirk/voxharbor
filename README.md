@@ -130,7 +130,7 @@ See **[docs/architecture.md](docs/architecture.md)** for call-flow diagrams, the
 
 ## Production gaps (by design, this is a lab)
 
-- **No single point of failure left?** Not yet: Kamailio and MySQL are single instances. Production would run two Kamailio nodes behind a floating IP or DNS SRV, plus replicated MySQL.
+- **Single points of failure remain:** Kamailio and MySQL are single instances. Production would run two Kamailio nodes behind a floating IP or DNS SRV, plus replicated MySQL.
 - **No encryption on the SIP phone side:** it uses UDP and RTP. Add TLS (5061) and SRTP for real deployments. Browser media is already DTLS-SRTP.
 - **Calls in progress on a crashing node are lost.** New calls fail over instantly.
 - **No PSTN trunk, CDRs/billing, or monitoring** (Homer, Prometheus) yet.
